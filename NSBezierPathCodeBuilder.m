@@ -24,18 +24,23 @@
 	NSMutableArray *lines = [NSMutableArray array];
 	
 	//[lines addObject:@"NSBezierPath *bp = [[NSBezierPath alloc] init];"];
+    for (NSUInteger i = 0; i < [points count];++i)
+    {
+        BezierPoint *point = [points objectAtIndex:i];
+        [lines addObject:[NSString stringWithFormat:@"case %ld:",i]];
+        [lines addObject:[NSString stringWithFormat:@"    result = ccp(%0.1f,%0.1f);",
+                          [point mainPoint].x, [point mainPoint].y]];
+        [lines addObject:@"    break;"];
+    }
+    [lines addObject:@""];
 	for (NSUInteger i = 0; i < [points count]; ++i) {
 		BezierPoint *point = [points objectAtIndex:i];
 		if (i == 0){
-            [lines addObject:[NSString stringWithFormat:@"object%ld.position = ccp(%0.1f,%0.1f);",i/2+1,
-                [point mainPoint].x, [point mainPoint].y]];
 		} else {
-            [lines addObject:[NSString stringWithFormat:@"ccBezierConfig bezier%ld;",i]];
-            [lines addObject:[NSString stringWithFormat:@"bezier%ld.controlPoint_1 = ccp(%0.1f, %0.1f);",i,[point controlPoint1].x, [point controlPoint1].y]];
-            [lines addObject:[NSString stringWithFormat:@"bezier%ld.controlPoint_2 = ccp(%0.1f, %0.1f);",i,[point controlPoint2].x, [point controlPoint2].y]];
-            [lines addObject:[NSString stringWithFormat:@"bezier%ld.endPosition = ccp(%0.1f, %0.1f);",i,[point mainPoint].x, [point mainPoint].y]];
-            [lines addObject:[NSString stringWithFormat:@"object%ld.position = ccp(%0.1f,%0.1f);",i+1,
-                              [point mainPoint].x, [point mainPoint].y]];
+            [lines addObject:[NSString stringWithFormat:@"case %ld:",i]];
+            [lines addObject:[NSString stringWithFormat:@"    result.controlPoint_1 = ccp(%0.1f, %0.1f);",[point controlPoint1].x, [point controlPoint1].y]];
+            [lines addObject:[NSString stringWithFormat:@"    result.controlPoint_2 = ccp(%0.1f, %0.1f);",[point controlPoint2].x, [point controlPoint2].y]];
+            [lines addObject:@"    break;"];
 		}
 	}
 	

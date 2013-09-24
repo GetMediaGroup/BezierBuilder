@@ -32,6 +32,11 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 
 
 @implementation BezierView
+{
+    NSURL *imgUrl;
+    NSData *imgData;
+    NSImage* v;
+}
 
 @synthesize delegate, bezierPoints;
 
@@ -43,6 +48,39 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 											 selector:@selector(frameChanged:)
 												 name:NSViewFrameDidChangeNotification
 											   object:self];
+}
+
+- (id)initWithFrame:(NSRect)frameRect
+{
+    self = [super initWithFrame:frameRect];
+    if(self){
+        imgData = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/Resources/castleMap2.png"];
+        v = [[NSImage alloc] initWithData:imgData];
+        ///*
+        NSSize s = v.size;
+        s.height = s.height*0.5;
+        s.width = s.width*0.5;
+        
+        NSImage* temp = [[NSImage alloc]initWithSize:s];
+        
+        [temp lockFocus];
+        NSAffineTransform *transform = [NSAffineTransform transform];
+        [transform scaleBy:0.5];
+        [transform concat];
+        [v drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeCopy fraction:1];
+        [temp unlockFocus];
+        
+        [v release];
+        v = temp;
+        //*/
+        
+        
+        
+        
+        //v = [[NSImage alloc] initWithData:imgData];
+    }
+    
+    return self;
 }
 
 - (BOOL)acceptsFirstResponder {
@@ -154,7 +192,6 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 		}
 	}
 }
-
 - (void)mouseDown:(NSEvent *)theEvent {
 	NSPoint event_location = [theEvent locationInWindow];
 	NSPoint local_point = [self convertPoint:event_location fromView:nil];
@@ -235,6 +272,8 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 #define HANDLE_HEIGHT 5
 
 - (void)drawRect:(NSRect)dirtyRect {
+    
+    [v drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeCopy fraction:1];
 	[[[NSColor redColor] colorWithAlphaComponent:0.6] set];
 	NSBezierPath * extra = [[NSBezierPath alloc] init];
 	for (NSUInteger i = 0; i < [bezierPoints count]; ++i) {
@@ -270,6 +309,9 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 }
 
 - (void) dealloc {
+    [imgUrl release];
+    [v release];
+    [imgData release];
 	[bezierPoints release];
 	[super dealloc];
 }
