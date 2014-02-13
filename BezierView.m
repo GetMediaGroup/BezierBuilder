@@ -35,7 +35,15 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 {
     NSURL *imgUrl;
     NSData *imgData;
+    NSData *imgOverlayData;
+    NSData *imgDataPortal1;
+    NSData *imgDataPortal2;
+    NSData *imgDataLevelPoint;
     NSImage* v;
+    NSImage* overlay;
+    NSImage* levelPoint;
+    NSImage* portal1;
+    NSImage* portal2;
 }
 
 @synthesize delegate, bezierPoints;
@@ -50,13 +58,69 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 											   object:self];
 }
 
+- (void)scaleImg:(NSImage**) imgToScale
+{
+    NSImage** p = imgToScale;
+    NSSize s = (*p).size;
+    s.height = s.height*0.5;
+    s.width = s.width*0.5;
+    
+    NSImage* temp = [[NSImage alloc]initWithSize:s];
+    
+    [temp lockFocus];
+    NSAffineTransform *transform = [NSAffineTransform transform];
+    [transform scaleBy:0.5];
+    [transform concat];
+    [*p drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeCopy fraction:1];
+    [temp unlockFocus];
+    
+    [*p release];
+    *p = temp;
+}
+
 - (id)initWithFrame:(NSRect)frameRect
 {
     self = [super initWithFrame:frameRect];
     if(self){
-        imgData = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/Resources/castleMap2.png"];
+        
+        NSString* mapLocation =
+        @"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/TempResources/Maps/mountains.png";
+        
+        //*
+        NSString* overlayLocation = nil;
+         //*/
+        /*
+        NSString* overlayLocation =
+        @"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/TempResources/Overlays/forestOverlay.png";
+         //*/
+        imgData = [NSData dataWithContentsOfFile:mapLocation];
         v = [[NSImage alloc] initWithData:imgData];
-        ///*
+        
+        if(overlayLocation)
+        {
+            imgOverlayData = [NSData dataWithContentsOfFile:overlayLocation];
+            overlay = [[NSImage alloc] initWithData:imgOverlayData];
+            [self scaleImg:&overlay];
+        }
+        
+        imgDataLevelPoint = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/Resources/temp/viewLevelFront_small.png"];
+        levelPoint = [[NSImage alloc]initWithData:imgDataLevelPoint];
+        [self scaleImg:&levelPoint];
+        [self scaleImg:&v];
+        //*
+        imgDataPortal1 = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/Resources/temp/portal_small.png"];
+        portal1 = [[NSImage alloc]initWithData:imgDataPortal1];
+        
+        imgDataPortal2 = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/Resources/temp/portal_small.png"];
+        portal2 = [[NSImage alloc]initWithData:imgDataPortal2];
+        
+        [self scaleImg:&portal1];
+        [self scaleImg:&portal2];
+        //*/
+        /*
+        imgData = [NSData dataWithContentsOfFile:@"/Users/hotab/workspace/SmashTheEvil/SmashTheEvil/App/TempResources/forestTmp.png"];
+        v = [[NSImage alloc] initWithData:imgData];
+        
         NSSize s = v.size;
         s.height = s.height*0.5;
         s.width = s.width*0.5;
@@ -92,7 +156,8 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 }
 
 
-#define NEAR_THRESHOLD 10
+#define NEAR_THRESHOLD 50
+#define NEAR_THRESHOLD_CP 10
 
 - (NSPoint) locationOfPathElementNearPoint:(NSPoint)aPoint {
 	NSPoint closest = NSMakePoint(-1, -1);
@@ -103,12 +168,12 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 		float tDistance = 0;
 		if (i > 0) {
 			tDistance = NSDistanceFromPointToPoint(aPoint, [p controlPoint2]);
-			if (tDistance <= distance && tDistance <= NEAR_THRESHOLD) {
+			if (tDistance <= distance && tDistance <= NEAR_THRESHOLD_CP) {
 				distance = tDistance;
 				closest = NSMakePoint(i, 2);
 			}
 			tDistance = NSDistanceFromPointToPoint(aPoint, [p controlPoint1]);
-			if (tDistance <= distance && tDistance <= NEAR_THRESHOLD) {
+			if (tDistance <= distance && tDistance <= NEAR_THRESHOLD_CP) {
 				distance = tDistance;
 				closest = NSMakePoint(i, 1);
 			}
@@ -275,9 +340,30 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
     
     [v drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeCopy fraction:1];
 	[[[NSColor redColor] colorWithAlphaComponent:0.6] set];
+    NSPoint tmp;
 	NSBezierPath * extra = [[NSBezierPath alloc] init];
 	for (NSUInteger i = 0; i < [bezierPoints count]; ++i) {
+        
 		BezierPoint *bezierPoint = [bezierPoints objectAtIndex:i];
+        if(i==0)
+        {
+            tmp.x = [bezierPoint mainPoint].x - portal1.size.width/2;
+            tmp.y = [bezierPoint mainPoint].y - portal1.size.height/2;
+            [portal1 drawAtPoint:tmp fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1];
+
+        }
+        else if(i==[bezierPoints count]-1)
+        {
+            tmp.x = [bezierPoint mainPoint].x - portal2.size.width/2;
+            tmp.y = [bezierPoint mainPoint].y - portal2.size.height/2;
+            [portal2 drawAtPoint:tmp fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1];
+        }
+        else
+        {
+            tmp.x = [bezierPoint mainPoint].x - levelPoint.size.width/2;
+            tmp.y = [bezierPoint mainPoint].y - levelPoint.size.height/2;
+            [levelPoint drawAtPoint:tmp fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1];
+        }
 		NSRect r;
 		if (i > 0) {
 			[extra moveToPoint:[[bezierPoints objectAtIndex:i-1] mainPoint]];
@@ -306,12 +392,20 @@ NSPoint NSScaledPoint(NSPoint point, float scale) {
 	[builder setBezierPoints:bezierPoints];
 	NSBezierPath * path = [builder objectForBezierPoints];
 	[path stroke];
+    
+    if(overlay) [overlay drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1];
 }
 
 - (void) dealloc {
     [imgUrl release];
     [v release];
     [imgData release];
+    [imgDataLevelPoint release];
+    [imgDataPortal1 release];
+    [imgDataPortal2 release];
+    [portal1 release];
+    [portal2 release];
+    [levelPoint release];
 	[bezierPoints release];
 	[super dealloc];
 }
